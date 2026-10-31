@@ -4,24 +4,23 @@
 
 ## 一键安装
 
-把下面的端口和目标地址改成你自己的：
+直接安装并生成 `/root/realm/config.toml` 默认模板：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/gdsszs88/realm-oneclick-install/main/install.sh) 443:1.2.3.4:443 8443:example.com:443
+curl -fsSL https://raw.githubusercontent.com/gdsszs88/realm-oneclick-install/main/install.sh | sudo bash
 ```
 
-每个参数格式为 `本机监听端口:目标地址:目标端口`，可一次传入多条规则。脚本必须以 root 身份运行；普通用户请在命令前加 `sudo`（见下方兼容写法）。
-
-如果系统或当前 shell 不支持进程替换，可用：
+默认模板使用 `54321` 端口及 `0.0.0.0` 占位目标。安装后必须把目标改成 3x-ui 面板服务器的真实 IP，否则不能形成有效中转：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gdsszs88/realm-oneclick-install/main/install.sh | sudo bash -s -- 443:1.2.3.4:443
+nano /root/realm/config.toml
+systemctl restart realm
 ```
 
-同时转发 TCP 和 UDP：
+也可以在安装命令中直接指定一条或多条规则，每个参数格式为 `本机监听端口:目标地址:目标端口`：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gdsszs88/realm-oneclick-install/main/install.sh | sudo ENABLE_UDP=1 bash -s -- 443:1.2.3.4:443
+curl -fsSL https://raw.githubusercontent.com/gdsszs88/realm-oneclick-install/main/install.sh | sudo bash -s -- 443:1.2.3.4:443 8443:example.com:443
 ```
 
 ## 管理命令

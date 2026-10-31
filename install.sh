@@ -14,9 +14,11 @@ die() { printf '\033[1;31m[realm] 错误: %s\033[0m\n' "$*" >&2; exit 1; }
 usage() {
   cat <<'EOF'
 用法：
+  sudo bash install.sh
   sudo bash install.sh 本地端口:目标地址:目标端口 [更多规则...]
 
 示例：
+  sudo bash install.sh
   sudo bash install.sh 443:1.2.3.4:443 8443:example.com:443
 
 环境变量：
@@ -27,7 +29,6 @@ EOF
 }
 
 [[ ${EUID} -eq 0 ]] || die "请用 root 用户或 sudo 运行"
-[[ $# -gt 0 ]] || { usage; exit 2; }
 command -v systemctl >/dev/null || die "仅支持使用 systemd 的 Linux 系统"
 
 case "$(uname -m)" in
@@ -74,14 +75,26 @@ if [[ -f $CONFIG_FILE ]]; then
   cp -a "$CONFIG_FILE" "${CONFIG_FILE}.bak.$(date +%Y%m%d%H%M%S)"
 fi
 {
-  printf '[log]\nlevel = "warn"\noutput = "stdout"\n\n[network]\nuse_udp = %s\n\n' "$( [[ ${ENABLE_UDP:-0} == 1 ]] && echo true || echo false )"
-  for rule in "$@"; do
-    local_port="${rule%%:*}"
-    remainder="${rule#*:}"
-    remote_host="${remainder%:*}"
-    remote_port="${remainder##*:}"
-    printf '[[endpoints]]\nlisten = "0.0.0.0:%s"\nremote = "%s:%s"\n\n' "$local_port" "$remote_host" "$remote_port"
-  done
+  if [[ $# -eq 0 ]]; then
+    cat <<'EOF'
+[network]
+tcp_keepalive = 15
+
+# ===== 3x-ui 面板后台登录转发（请把端口和目标 IP 改成真实值） =====
+[[endpoints]]
+listen = "0.0.0.0:54321"          # 将 54321 换成面板真实登录端口
+remote = "0.0.0.0:54321"          # 将 0.0.0.0 和 54321 换成面板服务器的真实 IP、端口
+EOF
+  else
+    printf '[network]\ntcp_keepalive = 15\nuse_udp = %s\n\n' "$( [[ ${ENABLE_UDP:-0} == 1 ]] && echo true || echo false )"
+    for rule in "$@"; do
+      local_port="${rule%%:*}"
+      remainder="${rule#*:}"
+      remote_host="${remainder%:*}"
+      remote_port="${remainder##*:}"
+      printf '[[endpoints]]\nlisten = "0.0.0.0:%s"\nremote = "%s:%s"\n\n' "$local_port" "$remote_host" "$remote_port"
+    done
+  fi
 } > "$CONFIG_FILE"
 chmod 0600 "$CONFIG_FILE"
 
@@ -127,6 +140,9 @@ log "安装完成：$(${INSTALL_DIR}/realm --version 2>/dev/null || echo "$versi
 log "配置文件：${CONFIG_FILE}"
 log "查看状态：systemctl status realm --no-pager"
 log "修改配置后：systemctl restart realm"
+if [[ $# -eq 0 ]]; then
+  log "默认 54321 规则是编辑模板；请执行 nano ${CONFIG_FILE} 填入真实面板 IP 和端口"
+fi
 if [[ ${ENABLE_BBR:-1} == 1 ]]; then
   log "当前拥塞控制：$(sysctl -n net.ipv4.tcp_congestion_control)"
 fi
