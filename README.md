@@ -32,7 +32,14 @@ journalctl -u realm -f
 systemctl restart realm
 ```
 
-配置位于 `/etc/realm/config.toml`。再次运行安装命令会更新程序和规则，并自动备份旧配置。
+Realm 程序和配置分别位于 `/root/realm/realm`、`/root/realm/config.toml`。再次运行安装命令会更新程序和规则，并自动备份旧配置。
+
+手动编辑配置：
+
+```bash
+nano /root/realm/config.toml
+systemctl restart realm
+```
 
 ## 说明
 

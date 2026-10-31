@@ -2,8 +2,8 @@
 set -Eeuo pipefail
 
 REPO="zhboner/realm"
-INSTALL_DIR="/opt/realm"
-CONFIG_DIR="/etc/realm"
+INSTALL_DIR="/root/realm"
+CONFIG_DIR="/root/realm"
 CONFIG_FILE="${CONFIG_DIR}/config.toml"
 SERVICE_FILE="/etc/systemd/system/realm.service"
 SYSCTL_FILE="/etc/sysctl.d/99-realm-bbr.conf"
@@ -95,13 +95,13 @@ After=network-online.target
 [Service]
 Type=simple
 User=root
+WorkingDirectory=${INSTALL_DIR}
 ExecStart=${INSTALL_DIR}/realm -c ${CONFIG_FILE}
 Restart=on-failure
 RestartSec=5s
 LimitNOFILE=1048576
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target
